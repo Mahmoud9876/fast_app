@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Diagramme FAST Complexe - Gestion d'entrepôt</title>
+  <script src="https://unpkg.com/gojs@2.1.46/release/go.js"></script>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #myDiagramDiv { height: 100%; width: 100%; }
+  </style>
+</head>
+<body>
+  <div id="myDiagramDiv"></div>
+
+  <script>
+    // Initialisation du diagramme GoJS
+    var $ = go.GraphObject.make;
+    var myDiagram = $(go.Diagram, "myDiagramDiv", {
+      "undoManager.isEnabled": true,
+      initialContentAlignment: go.Spot.Center,
+      layout: $(go.LayeredDigraphLayout)
+    });
+
+    // Définition des noeuds
+    myDiagram.nodeTemplate =
+      $(go.Node, "Auto",
+        $(go.Shape, "RoundedRectangle", { strokeWidth: 0, fill: "lightblue" }),
+        $(go.TextBlock, { margin: 10 }, new go.Binding("text", "key"))
+      );
+
+    // Définition des liens
+    myDiagram.linkTemplate =
+      $(go.Link,
+        { routing: go.Link.Orthogonal, corner: 5 },
+        $(go.Shape, { strokeWidth: 2, stroke: "black" })
+      );
+
+    // Modèle de données
+    var model = $(go.GraphLinksModel);
+    model.nodeDataArray = [
+      { key: "Réception des produits" },
+      { key: "Vérification des stocks entrants" },
+      { key: "Stockage des produits" },
+      { key: "Optimisation de l'espace de stockage" },
+      { key: "Utilisation de la technologie (robots, RFID)" },
+      { key: "Préparation des commandes" },
+      { key: "Utilisation de robots pour picking" },
+      { key: "Gestion des priorités de commandes" },
+      { key: "Gestion des retards de livraison" },
+      { key: "Expédition des commandes" },
+      { key: "Coordination des expéditions" },
+      { key: "Livraison en temps réel" },
+      { key: "Suivi des erreurs de préparation" }
+    ];
+    model.linkDataArray = [
+      { from: "Réception des produits", to: "Vérification des stocks entrants" },
+      { from: "Vérification des stocks entrants", to: "Stockage des produits" },
+      { from: "Stockage des produits", to: "Optimisation de l'espace de stockage" },
+      { from: "Optimisation de l'espace de stockage", to: "Utilisation de la technologie (robots, RFID)" },
+      { from: "Utilisation de la technologie (robots, RFID)", to: "Préparation des commandes" },
+      { from: "Préparation des commandes", to: "Utilisation de robots pour picking" },
+      { from: "Préparation des commandes", to: "Gestion des priorités de commandes" },
+      { from: "Gestion des priorités de commandes", to: "Gestion des retards de livraison" },
+      { from: "Gestion des retards de livraison", to: "Expédition des commandes" },
+      { from: "Expédition des commandes", to: "Coordination des expéditions" },
+      { from: "Coordination des expéditions", to: "Livraison en temps réel" },
+      { from: "Livraison en temps réel", to: "Suivi des erreurs de préparation" }
+    ];
+
+    // Assignation du modèle au diagramme
+    myDiagram.model = model;
+  </script>
+</body>
+</html>

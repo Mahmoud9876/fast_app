@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diagramme FAST Complexe - Gestion d'entrepôt</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script src="https://unpkg.com/gojs@2.1.46/release/go.js"></script>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #myDiagramDiv { height: 90%; width: 100%; border: 1px solid black; }
+    #controlsDiv { text-align: center; padding: 10px; background-color: #f9f9f9; }
+    .btn {
+      padding: 10px;
+      margin: 5px;
+      font-size: 18px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #4CAF50;
+      color: white;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn:hover {
+      background-color: #45a049;
+    }
+    .btn .icon {
+      font-size: 20px;
+      margin-right: 5px;
+    }
+    #fullscreenButton {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px;
+      background-color: transparent;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    #fullscreenButton:hover {
+      background-color: #ddd;
+      border-radius: 5px;
+    }
+    #titleDiv {
+      text-align: center;
+      margin: 20px;
+      font-size: 24px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- Titre du diagramme -->
+  <div id="titleDiv" contenteditable="true">Sample 1</div>
+
+  <!-- Div pour les contrôles -->
+  <div id="controlsDiv">
+    <button class="btn" id="addLinkButton">
+      <span class="icon">&#x1F517;</span> Ajouter un lien
+    </button>
+    <button class="btn" id="fullscreenButton">&#x26F6;</button>
+  </div>
+
+  <!-- Div pour le diagramme -->
+  <div id="myDiagramDiv"></div>
+
+  <script>
+    var $ = go.GraphObject.make;
+
+    // Initialisation du diagramme
+    var myDiagram = $(go.Diagram, "myDiagramDiv", {
+      "undoManager.isEnabled": true,
+      initialContentAlignment: go.Spot.Center,
+      layout: $(go.LayeredDigraphLayout),
+      "toolManager.mouseWheelBehavior": go.ToolManager.WheelZoom,
+      "allowSelect": true
+    });
+
+    // Template des nœuds
+    myDiagram.nodeTemplate =
+      $(go.Node, "Auto",
+        {
+          selectionAdorned: true,  // Permet l'apparence de sélection
+          doubleClick: onNodeDoubleClick  // Ajouter un double clic sur le nœud pour le renommer
+        },
+        $(go.Shape, "RoundedRectangle", { strokeWidth: 0, fill: "lightblue" }),
+        $(go.TextBlock, { margin: 10, name: "TEXT" }, new go.Binding("text", "key")),
+        {
+          selectionAdornmentTemplate:
+            $(go.Adornment, "Auto",
+              $(go.Shape, { stroke: "blue", strokeWidth: 3, fill: null }),  // Contour bleu lors de la sélection
+              $(go.Placeholder)
+            )
+        }
+      );
+
+    // Template des liens
+    myDiagram.linkTemplate =
+      $(go.Link,
+        { routing: go.Link.Orthogonal, corner: 5, doubleClick: onLinkDoubleClick },
+        $(go.Shape, { strokeWidth: 2, stroke: "black" }),
+        $(go.Shape, { toArrow: "Standard", strokeWidth: 2, fill: "black" })
+      );
+
+    // Modèle de données
+    myDiagram.model = new go.GraphLinksModel(
+      [
+        { key: "Réception des produits" },
+        { key: "Vérification des stocks entrants" },
+        { key: "Stockage des produits" },
+        { key: "Optimisation de l'espace de stockage" },
+        { key: "Utilisation de la technologie (robots, RFID)" }
+      ],
+      [
+        { from: "Réception des produits", to: "Vérification des stocks entrants" },
+        { from: "Vérification des stocks entrants", to: "Stockage des produits" },
+        { from: "Stockage des produits", to: "Optimisation de l'espace de stockage" },
+        { from: "Optimisation de l'espace de stockage", to: "Utilisation de la technologie (robots, RFID)" }
+      ]
+    );
+
+    // Fonction pour ajouter un nouveau nœud entre deux nœuds existants
+    function onLinkDoubleClick(e, link) {
+      // Récupère les nœuds reliés par le lien
+      var fromNode = link.fromNode;
+      var toNode = link.toNode;
+
+      // Ajoute un nouveau nœud
+      var newNode = { key: "Nouveau Noeud" };
+      myDiagram.model.addNodeData(newNode);
+
+      // Ajoute un lien du nœud précédent vers le nouveau nœud
+      myDiagram.model.addLinkData({ from: fromNode.key, to: newNode.key });
+
+      // Ajoute un lien du nouveau nœud vers le nœud suivant
+      myDiagram.model.addLinkData({ from: newNode.key, to: toNode.key });
+
+      // Supprime le lien initial
+      myDiagram.model.removeLinkData(link.data);
+    }
+
+    // Fonction pour renommer le nœud lors d'un double clic
+    function onNodeDoubleClick(e, node) {
+      // Commence une transaction
+      myDiagram.startTransaction("rename node");
+
+      // Utilise la méthode native d'édition de texte de GoJS
+      var textBlock = node.findObject("TEXT");
+      if (textBlock !== null) {
+        myDiagram.commandHandler.editTextBlock(textBlock);
+      }
+
+      // Valider la transaction
+      myDiagram.commitTransaction("rename node");
+    }
+
+    // Fonction de zoom
+    document.getElementById("fullscreenButton").addEventListener("click", function () {
+      myDiagram.zoomToFit();
+    });
+
+    // Bouton "Ajouter un lien" - Activé uniquement lorsque deux nœuds sont sélectionnés
+    document.getElementById("addLinkButton").addEventListener("click", function() {
+      var selectedNodes = myDiagram.selection.toArray();
+      if (selectedNodes.length === 2) {
+        var node1 = selectedNodes[0];
+        var node2 = selectedNodes[1];
+
+        // Ajouter un lien entre les deux nœuds sélectionnés
+        myDiagram.model.addLinkData({ from: node1.key, to: node2.key });
+      } else {
+        alert("Veuillez sélectionner exactement deux nœuds pour créer un lien.");
+      }
+    });
+
+  </script>
+</body>
+</html>
